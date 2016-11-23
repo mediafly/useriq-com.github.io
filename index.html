@@ -1,0 +1,196 @@
+<html>
+<body>
+  <div>
+    <h1>Your favorite tech company is:</h1>
+    <div>
+      <img id="logo" style="max-width:150px;height:auto" />
+      <div id="name-container">
+        <div>Congratulations: <span id='person-name'>[YOUR FIRST NAME AND LAST NAME GOES HERE]!</span></div>
+        <div>Your favorite company is <span id='company-name'></span></div>
+      </div>
+    </div>
+  </div>
+</body>
+<script>
+  var companyLogos = {
+    Facebook: 'images/facebook.jpeg',
+    UserIQ: 'images/useriq.png'
+  }
+
+  // RFC 4648
+  // Library to encode text
+  var EncodingLibrary = {
+    // private property
+    _keyStr : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
+
+    // public method for decoding
+    decode : function (input) {
+      var output = "";
+      var chr1, chr2, chr3;
+      var enc1, enc2, enc3, enc4;
+      var i = 0;
+
+      input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
+
+      while (i < input.length) {
+        enc1 = this._keyStr.indexOf(input.charAt(i++));
+        enc2 = this._keyStr.indexOf(input.charAt(i++));
+        enc3 = this._keyStr.indexOf(input.charAt(i++));
+        enc4 = this._keyStr.indexOf(input.charAt(i++));
+
+        chr1 = (enc1 << 2) | (enc2 >> 4);
+        chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+        chr3 = ((enc3 & 3) << 6) | enc4;
+
+        output = output + String.fromCharCode(chr1);
+
+        if (enc3 != 64) {
+          output = output + String.fromCharCode(chr2);
+        }
+        if (enc4 != 64) {
+          output = output + String.fromCharCode(chr3);
+        }
+
+      }
+      output = EncodingLibrary._utf8_decode(output);
+      return output;
+    },
+
+    // private method for UTF-8 decoding
+    _utf8_decode : function (utftext) {
+      var string = "";
+      var i = 0;
+      var c = c1 = c2 = 0;
+      while ( i < utftext.length ) {
+        c = utftext.charCodeAt(i);
+        if (c < 128) {
+          string += String.fromCharCode(c);
+          i++;
+        }
+        else if((c > 191) && (c < 224)) {
+          c2 = utftext.charCodeAt(i+1);
+          string += String.fromCharCode(((c & 31) << 6) | (c2 & 63));
+          i += 2;
+        }
+        else {
+          c2 = utftext.charCodeAt(i+1);
+          c3 = utftext.charCodeAt(i+2);
+          string += String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63));
+          i += 3;
+        }
+      }
+      return string;
+    }
+  }
+
+
+  CompanySelector = function() {
+    this.delimiter = '|'
+    this.defaultlogo = 'RmFjZWJvb2soKQ=='
+    this.magicNumber = 19
+    this.position = null
+
+    this.multiplier = (function() {
+      return function(n, f) {
+        f = f || []
+        if (typeof n !== 'number') return null
+        if (n == 0 || n == 1) return 1
+        if (f[n] > 0) return f[n]
+        return f[n] = arguments.callee(n-1, f) * n
+      }
+    })()
+
+    this.decodeString = function(encodedText) {
+      var decoded = EncodingLibrary.decode(encodedText)
+      return decoded.substring(0,decoded.length-2)
+    }
+
+    this.calculateNameKey = function(name, search) {
+      if (!name) return null
+      var calculation = 0
+      for (var i=0; i<name.length; i++) {
+        calculation += name[i].charCodeAt()
+      }
+
+      if (search.filter((s) => parseFloat(s) == calculation).length) return name
+      return null
+    }
+
+    this.getFavoriteCompany = function() {
+      var self = this
+      var hashArray = location.hash.split((this.delimiter.substring(0,1) + '^')[1])
+      var searchArray = window.location.search.split(this.delimiter).slice(1)
+
+      var beforePosition = true
+      var hashMap = {}
+      var _i = 0
+      while (beforePosition && !hashMap[_i]) {
+        hashMap[_i] = hashArray[_i]
+
+        if (isNaN(this.position) || _i >= this.position + 1) {
+          beforePosition = false
+        } else if (_i === 0) {
+          try {
+            this.position = parseFloat(hashMap[_i][1])
+          } catch(e) {
+            this.logo = this.defaultlogo
+            beforePosition = false
+            break
+          }
+        } else if (_i === this.position - 1) {
+          this.logo = hashMap[_i]
+        }
+        _i++
+      }
+
+      this.name = this.getPersonName(searchArray)
+      this.name = this.calculateNameKey(this.name, searchArray)
+
+      this.logo = (function() {
+        var logo = self.decodeString(self.logo || self.defaultlogo)
+        if (!companyLogos[logo]) logo = self.decodeString(self.defaultlogo)
+        return logo
+      })()
+
+      return this
+    }
+  }
+
+  CompanySelector.prototype.getPersonName = function(settings, key) {
+    key = key || ''
+    var value = ''
+    if (!(typeof this.position === 'number')) return null
+
+    // Make sure we don't include the normal '?' in the settings
+    while (settings.length && !key) {
+      var currentSetting = settings[0]
+      currentSetting = currentSetting.split('=')
+      key = currentSetting[0]
+      value = currentSetting[1]
+
+      if (this.multiplier(key.length) === this.multiplier('useriq'.length)) {
+        return decodeURIComponent(value.substring(this.position))
+      }
+
+      if (settings.length === 1) {
+        settings = []
+      } else {
+        settings.splice(1)
+      }
+    }
+    return null
+  }
+
+  cs = new CompanySelector().getFavoriteCompany()
+  document.getElementById('logo').src = companyLogos[cs.logo]
+
+  var nameElement = document.getElementById('person-name')
+  var companyName = document.getElementById('company-name')
+  if (cs.name) {
+    nameElement.textContent = cs.name
+    companyName.textContent = cs.logo
+  } else {
+    document.getElementById('name-container').textContent = "Sorry, we couldn't determine who you are!"
+  }
+</script>
+</html>

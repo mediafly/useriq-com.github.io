@@ -1,0 +1,16 @@
+h1. UserIQ Dev Challenge
+
+h2. Introduction
+
+The goal of this challenge is to adjust *ONLY* the URI (query string and hash)
+of the page to show the UserIQ logo as your favorite tech company and
+provide your first and last name.
+
+You can access the challenge at the following address:
+"https://useriq-com.github.io":https://useriq-com.github.io
+
+h2. Desired Result
+
+Be sure to replace John Smith with your first and last name.
+
+!desired_result.png!
