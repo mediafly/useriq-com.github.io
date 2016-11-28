@@ -86,23 +86,11 @@
 
   CompanySelector = function() {
     this.delimiter = '|'
-    this.defaultlogo = 'RmFjZWJvb2soKQ=='
-    this.magicNumber = 19
+    this.defaultlogo = 'RmFjZWJvb2s='
     this.position = null
 
-    this.multiplier = (function() {
-      return function(n, f) {
-        f = f || []
-        if (typeof n !== 'number') return null
-        if (n == 0 || n == 1) return 1
-        if (f[n] > 0) return f[n]
-        return f[n] = arguments.callee(n-1, f) * n
-      }
-    })()
-
     this.decodeString = function(encodedText) {
-      var decoded = EncodingLibrary.decode(encodedText)
-      return decoded.substring(0,decoded.length-2)
+      return EncodingLibrary.decode(encodedText)
     }
 
     this.calculateNameKey = function(name, search) {
@@ -118,7 +106,7 @@
 
     this.getFavoriteCompany = function() {
       var self = this
-      var hashArray = location.hash.split((this.delimiter.substring(0,1) + '^')[1])
+      var hashArray = location.hash.split(this.delimiter)
       var searchArray = window.location.search.split(this.delimiter).slice(1)
 
       var beforePosition = true
@@ -168,7 +156,7 @@
       key = currentSetting[0]
       value = currentSetting[1]
 
-      if (this.multiplier(key.length) === this.multiplier('useriq'.length)) {
+      if (key.length === 'useriq'.length) {
         return decodeURIComponent(value.substring(this.position))
       }
 
